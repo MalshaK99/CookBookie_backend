@@ -1,11 +1,11 @@
 const express = require('express');
 const User = require('../models/User');
 const router = express.Router();
-const jwt = require('../middleware/auth');
+const jwt = require('jsonwebtoken'); 
 
 // Function to create token
 const createToken = (_id) => {
-    return jwt.sign({ _id }, process.env.JWT_SECRET, { expiresIn: '3d' }); // Ensure JWT_SECRET is set in .env
+    return jwt.sign({ _id }, process.env.JWT_SECRET, { expiresIn: '3d' }); 
 };
 
 // Sign up route
