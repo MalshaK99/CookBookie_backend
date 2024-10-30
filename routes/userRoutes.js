@@ -2,7 +2,8 @@ const express = require('express');
 const User = require('../models/User');
 const router = express.Router();
 const jwt = require('jsonwebtoken'); 
-const auth=require('../middleware/auth')
+const auth = require('../middleware/auth');
+const bcrypt = require('bcrypt');
 
 // Function to create token
 const createToken = (_id) => {
@@ -11,43 +12,52 @@ const createToken = (_id) => {
 
 router.get('/me', auth, async (req, res) => {
     try {
-        res.json(req.user);  // Send the user data as JSON respons
+        res.json(req.user); // Send the user data as JSON response
     } catch (error) {
         res.status(500).send({ message: 'Error fetching user details', error });
     }
 });
 
-
-  // Update user details
-  router.put("/update", auth, async (req, res) => {
-    try {
+// Update user details
+router.put("/update", auth, async (req, res) => {
+  try {
       const { fname, lname, email, currentPassword, newPassword } = req.body;
-  
       const user = req.user;
-  
-      // Check if current password matches
-      const isMatch = await bcrypt.compare(currentPassword, user.password);
-      if (!isMatch) {
-        return res.status(400).send({ message: "Current password is incorrect." });
+
+      // Check if at least one field is provided for update
+      if (!fname && !lname && !email && !newPassword) {
+          return res.status(400).send({ message: "No fields provided for update" });
       }
-  
-      // Update fields
-      user.fname = fname;
-      user.name = lname;
-      user.email = email;
-  
-      // If new password is provided, hash it and update
+
+      // Validate current password if newPassword is provided
       if (newPassword) {
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(newPassword, salt);
+          if (!currentPassword) {
+              return res.status(400).send({ message: "Current password is required to change the password." });
+          }
+
+          const isMatch = await bcrypt.compare(currentPassword, user.password);
+          if (!isMatch) {
+              return res.status(400).send({ message: "Current password is incorrect." });
+          }
+
+          // Hash and update password
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(newPassword, salt);
       }
-  
+
+      // Update other fields if they are provided
+      if (fname) user.fname = fname;
+      if (lname) user.lname = lname;
+      if (email) user.email = email;
+
       await user.save();
       res.send({ message: "User details updated successfully" });
-    } catch (error) {
+  } catch (error) {
       res.status(500).send({ message: "Error updating user details", error });
-    }
-  });
+  }
+});
+
+
 // Sign up route
 router.post('/signup', async (req, res) => {
     const { fname, lname, email, password } = req.body;
@@ -81,8 +91,7 @@ router.post('/login', async (req, res) => {
 
         const token = createToken(user._id);
         res.status(200).json({ message: "Login successful", user, token });
-        localStorage.setItem('token', response.data.token);  
-
+        
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
