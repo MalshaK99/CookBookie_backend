@@ -81,7 +81,7 @@ router.post('/login', async (req, res) => {
 
         const token = createToken(user._id);
         res.status(200).json({ message: "Login successful", user, token });
-        localStorage.setItem('token', response.data.token);  // Save token to localStorage
+        localStorage.setItem('token', response.data.token);  
 
     } catch (error) {
         res.status(500).json({ message: error.message });
