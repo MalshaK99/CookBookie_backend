@@ -9,59 +9,74 @@ const bcrypt = require('bcrypt');
 const createToken = (_id) => {
     return jwt.sign({ _id }, process.env.JWT_SECRET, { expiresIn: '3d' }); 
 };
-
 router.get('/me', auth, async (req, res) => {
     try {
-        res.json(req.user); // Send the user data as JSON response
+        console.log("Authenticated User ID:", req.user?._id); 
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+        res.json(user);
     } catch (error) {
+        console.error("Error fetching user details:", error); // Detailed error log
         res.status(500).send({ message: 'Error fetching user details', error });
     }
 });
 
+
+
 // Update user details
 router.put("/update", auth, async (req, res) => {
-  try {
-      const { fname, lname, email, currentPassword, newPassword } = req.body;
-      const user = req.user;
+    try {
+        const { fname, phone, email, currentPassword, newPassword } = req.body;
+        const user = req.user;
 
-      // Check if at least one field is provided for update
-      if (!fname && !lname && !email && !newPassword) {
-          return res.status(400).send({ message: "No fields provided for update" });
-      }
+        // Log the incoming request body for debugging
+        console.log("Incoming update request body:", req.body);
 
-      // Validate current password if newPassword is provided
-      if (newPassword) {
-          if (!currentPassword) {
-              return res.status(400).send({ message: "Current password is required to change the password." });
-          }
+        // Check if at least one field is provided for update
+        if (!fname && !phone && !email && !newPassword) {
+            return res.status(400).send({ message: "No fields provided for update" });
+        }
 
-          const isMatch = await bcrypt.compare(currentPassword, user.password);
-          if (!isMatch) {
-              return res.status(400).send({ message: "Current password is incorrect." });
-          }
+        // Validate current password if newPassword is provided
+        if (newPassword) {
+            if (!currentPassword) {
+                return res.status(400).send({ message: "Current password is required to change the password." });
+            }
 
-          // Hash and update password
-          const salt = await bcrypt.genSalt(10);
-          user.password = await bcrypt.hash(newPassword, salt);
-      }
+            const isMatch = await bcrypt.compare(currentPassword, user.password);
+            if (!isMatch) {
+                return res.status(400).send({ message: "Current password is incorrect." });
+            }
 
-      // Update other fields if they are provided
-      if (fname) user.fname = fname;
-      if (lname) user.lname = lname;
-      if (email) user.email = email;
+            // Hash and update password
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(newPassword, salt);
+        }
 
-      await user.save();
-      res.send({ message: "User details updated successfully" });
-  } catch (error) {
-      res.status(500).send({ message: "Error updating user details", error });
-  }
+        // Update other fields if they are provided
+        if (fname) user.fname = fname;
+        if (phone) user.phone = phone;
+        if (email) user.email = email;
+
+        await user.save();
+        res.send({ message: "User details updated successfully" });
+    } catch (error) {
+        console.error("Error updating user details:", error); // Log the error for debugging
+        res.status(500).send({ message: "Error updating user details", error: error.message });
+    }
 });
 
 
+
+
+
+    
 // Sign up route
 router.post('/signup', async (req, res) => {
-    const { fname, lname, email, password } = req.body;
-    const user = new User({ fname, lname, email, password });
+    const { fname, phone, email, password } = req.body;
+    const user = new User({ fname, phone, email, password });
 
     try {
         const savedUser = await user.save();

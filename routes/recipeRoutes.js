@@ -104,8 +104,8 @@ router.put("/recipe",auth,async(req,res)=>{
         }
         if(name) user.name=name;
         if(email) user.email=email;
-        if(imagePath) user.imagePath;
-        if(description) user.description;
+        if(imagePath) user.imagePath=imagePath;
+        if(description) user.description=description;
 
         await user.save();
         res.send({message: "Updated Successfully"});

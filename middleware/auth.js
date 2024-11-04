@@ -17,7 +17,7 @@ const auth = async (req, res, next) => {
             return res.status(401).json({ message: 'User not found, authorization denied' });
         }
 
-        req.userId = user._id;
+        req.userId = user;
         next();
     } catch (error) {
         return res.status(401).json({ message: 'Token is not valid', error: error.message });
