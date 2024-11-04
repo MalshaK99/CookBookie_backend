@@ -93,5 +93,25 @@ router.get("/my-recipes",auth,async (req, res) => {
     }
 });
 
+//update recipe
+router.put("/recipe",auth,async(req,res)=>{
+    try{
+        const {name,email,imagePath,description}=req.body;
+        const user=req.user;
+
+        if (!name && !email  && !imagePath && !description) {
+            return res.status(400).send({ message: "No fields provided for update" });
+        }
+        if(name) user.name=name;
+        if(email) user.email=email;
+        if(imagePath) user.imagePath;
+        if(description) user.description;
+
+        await user.save();
+        res.send({message: "Updated Successfully"});
+    }catch(error){
+        res.status(500).send({message: "Error updating details"})
+    }
+});
 
 module.exports = router;
