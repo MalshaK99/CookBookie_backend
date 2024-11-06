@@ -4,16 +4,7 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const RecipeSchema = new Schema({
-    name: {
-        type: String,
-        required: true
-    },
-    email: {
-        type: String,
-        required: true,
-        
-    },
-    phone: {
+    recipeName:{
         type: String,
         required: true
     },

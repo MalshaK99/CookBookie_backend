@@ -4,7 +4,8 @@ const Recipe = require('../models/Recipe');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const auth=require('../middleware/auth')
+const auth = require('../middleware/auth');
+
 // Check and create uploads directory if it doesn't exist
 const uploadDir = './uploads';
 if (!fs.existsSync(uploadDir)) {
@@ -23,95 +24,92 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage });
+
+// POST endpoint to create a new recipe
 router.post('/recipe', auth, upload.single('image'), async (req, res) => {
-     console.log('Request Body:', req.body);
-     console.log('Uploaded File:', req.file);
-    
-     try {
-    if (!req.file) {
-     return res.status(400).json({ message: 'Image file is required.' });
-     }
-    const { name, email, phone, description } = req.body;
-    if (!name || !email || !phone || !description) {
-     console.log('Name:', name, 'Email:', email, 'Phone:', phone, 'Description:', description);
-    return res.status(400).json({ message: 'All fields are required.' });
-     }
-    
-     const newRecipe = new Recipe({
-     name: name,
-    email: email,
-    phone: phone,
-    imagePath: req.file.path,
-    description: description,
-     userId: req.userId 
-         });
-    
-    await newRecipe.save();
-    res.status(201).json(newRecipe); // Respond with the created recipe
-     } catch (error) {
-     console.error('Error creating recipe:', error.message);
-     res.status(500).json({ message: 'Error creating recipe', error: error.message });
-     }
-    });
-        
-    // Delete a recipe by ID (with auth and ownership check)
-    router.delete('/recipe/:id', auth, async (req, res) => {
-        try {
-            // Find the recipe by ID
-            const recipe = await Recipe.findById(req.params.id);
-    
-            // Check if recipe exists
-            if (!recipe) {
-                return res.status(404).json({ message: 'Recipe not found.' });
-            }
-    
-            // Ensure the logged-in user is the owner of the recipe
-            if (recipe.author.toString() !== req.userId) {
-                return res.status(403).json({ message: 'Unauthorized to delete this recipe.' });
-            }
-    
-            // Delete the recipe
-            await recipe.remove();
-            res.status(200).json({ message: 'Recipe deleted successfully.', recipe });
-        } catch (error) {
-            console.error('Error deleting recipe:', error.message);
-            res.status(500).json({ message: 'Error deleting recipe', error: error.message });
-        }
-    });
-    
-    
-router.get("/my-recipes",auth,async (req, res) => {
-    console.log('first')
+    console.log('User ID:', req.user?._id);  // Make sure user ID is attached
+    console.log('Request Body:', req.body);
+    console.log('Uploaded File:', req.file);
+
     try {
-        const recipes = await Recipe.find({userId:req.userId});
-        console.log('User ID ',req.userId)
-        console.log('recipes ',recipes)
-        res.status(200).json(recipes);
-    } catch (error) {
-        console.error('Error fetching recipes:', error);
-        res.status(500).json({ message: 'Error fetching recipes', error: error.message });
-    }
-});
-
-//update recipe
-router.put("/recipe",auth,async(req,res)=>{
-    try{
-        const {name,email,imagePath,description}=req.body;
-        const user=req.user;
-
-        if (!name && !email  && !imagePath && !description) {
-            return res.status(400).send({ message: "No fields provided for update" });
+        if (!req.file) {
+            return res.status(400).json({ message: 'Image file is required.' });
         }
-        if(name) user.name=name;
-        if(email) user.email=email;
-        if(imagePath) user.imagePath=imagePath;
-        if(description) user.description=description;
+        const { recipeName, description } = req.body;
 
-        await user.save();
-        res.send({message: "Updated Successfully"});
-    }catch(error){
-        res.status(500).send({message: "Error updating details"})
+        if (!recipeName || !description) {
+            return res.status(400).json({ message: 'Recipe name and description are required.' });
+        }
+
+        if (!req.user || !req.user._id) {
+            return res.status(400).json({ message: 'User ID is required.' });
+        }
+
+        // Create new recipe with userId from req.user._id
+        const newRecipe = new Recipe({
+            recipeName,
+            imagePath: req.file.path,
+            description,
+            userId: req.user._id // Attach user ID from the decoded token
+        });
+
+        await newRecipe.save();
+        res.status(201).json(newRecipe); // Respond with the created recipe
+    } catch (error) {
+        console.error('Error creating recipe:', error.message);
+        res.status(500).json({ message: 'Error creating recipe', error: error.message });
     }
 });
+
+    
+    // GET endpoint to fetch recipes created by the logged-in user
+    router.get("/my-recipes", auth, async (req, res) => {
+        console.log('User ID:', req.user?._id);  // Log the user ID from the decoded token
+        try {
+            if (!req.user || !req.user._id) {
+                return res.status(400).json({ message: "User not authenticated" });
+            }
+    
+            const recipes = await Recipe.find({ userId: req.user._id });  // Query for recipes by user ID
+            console.log('Recipes found:', recipes);  // Log the found recipes
+    
+            if (recipes.length === 0) {
+                return res.status(404).json({ message: 'No recipes found for this user' });
+            }
+    
+            res.status(200).json(recipes);  // Send the recipes in the response
+        } catch (error) {
+            console.error('Error fetching recipes:', error);  // Detailed error log
+            res.status(500).json({ message: 'Error fetching recipes', error: error.message });
+        }
+    });
+    
+    
+    // PUT endpoint to update an existing recipe
+    router.put("/recipe/:id", auth, async (req, res) => {
+     try {
+    const { description } = req.body;
+    
+    if (!description) {
+    return res.status(400).json({ message: "No fields provided for update" });
+    }
+    
+     // Find the recipe by ID and ensure it belongs to the logged-in user
+     const recipe = await Recipe.findOneAndUpdate(
+     { _id: req.params.id, userId: req.userId },
+     { description }, // Only update the description here
+     { new: true }
+     );
+    
+     if (!recipe) {
+     return res.status(404).json({ message: "Recipe not found or unauthorized to update." });
+     }
+    
+     res.status(200).json({ message: "Updated Successfully", recipe });
+     } catch (error) {
+     res.status(500).json({ message: "Error updating details", error: error.message });
+     }
+    });
+    
 
 module.exports = router;
