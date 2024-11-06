@@ -51,10 +51,7 @@ router.put("/update", auth, async (req, res) => {
       .send({ message: "Error updating user details", error: error.message });
   }
 });
-const bcrypt = require('bcryptjs');
-const router = require('express').Router();
-const auth = require('../middleware/auth'); // Assuming you have an authentication middleware
-const User = require('../models/User'); // Assuming your User model is imported here
+
 
 router.put('/update-password', auth, async (req, res) => {
     try {
@@ -64,7 +61,7 @@ router.put('/update-password', auth, async (req, res) => {
             return res.status(400).send({ message: "Current and new passwords are required" });
         }
 
-        // Find the user by ID
+        // Find the user
         const user = await User.findById(req.user._id);
         if (!user) {
             return res.status(404).send({ message: "User not found" });
@@ -78,10 +75,10 @@ router.put('/update-password', auth, async (req, res) => {
 
         // Hash the new password
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(newPassword, salt);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-        // Save the updated user document
-        await user.save();
+        // Update the password with findByIdAndUpdate
+        await User.findByIdAndUpdate(req.user._id, { password: hashedPassword });
 
         res.send({ message: "Password updated successfully" });
         console.log("Password updated successfully");
@@ -90,8 +87,6 @@ router.put('/update-password', auth, async (req, res) => {
         res.status(500).send({ message: "Error updating password", error: error.message });
     }
 });
-
-module.exports = router;
 
 // Sign up route
 router.post("/signup", async (req, res) => {
