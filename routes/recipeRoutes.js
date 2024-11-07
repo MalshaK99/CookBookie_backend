@@ -86,29 +86,46 @@ router.post('/recipe', auth, upload.single('image'), async (req, res) => {
     
     
     // PUT endpoint to update an existing recipe
-    router.put("/recipe/:id", auth, async (req, res) => {
-     try {
-    const { description } = req.body;
+    router.put("/update/:id", auth, upload.single('image'), async (req, res) => {
+        try {
+            const { recipeName, description } = req.body;
+            const imagePath = req.file ? req.file.path : null;
     
-    if (!description) {
-    return res.status(400).json({ message: "No fields provided for update" });
-    }
+            // Check if at least one field is provided for the update
+            if (!recipeName && !description && !imagePath) {
+                return res.status(400).json({ message: "No fields provided for update" });
+            }
     
-     // Find the recipe by ID and ensure it belongs to the logged-in user
-     const recipe = await Recipe.findOneAndUpdate(
-     { _id: req.params.id, userId: req.userId },
-     { description }, // Only update the description here
-     { new: true }
-     );
+            // Prepare the fields to update
+            let updateFields = {};
+            if (recipeName) updateFields.recipeName = recipeName;
+            if (description) updateFields.description = description;
+            if (imagePath) updateFields.imagePath = imagePath;
     
-     if (!recipe) {
-     return res.status(404).json({ message: "Recipe not found or unauthorized to update." });
-     }
+            // Find and update the recipe
+            const recipe = await Recipe.findOne({ _id: req.params.id, userId: req.user._id });
     
-     res.status(200).json({ message: "Updated Successfully", recipe });
-     } catch (error) {
-     res.status(500).json({ message: "Error updating details", error: error.message });
-     }
+            if (!recipe) {
+                return res.status(404).json({ message: "Recipe not found or unauthorized to update" });
+            }
+    
+            // Remove the old image if a new one is uploaded
+            if (imagePath && recipe.imagePath) {
+                fs.unlinkSync(recipe.imagePath); // Remove the existing image file
+            }
+    
+            // Update the recipe properties and save
+            if (recipeName) recipe.recipeName = recipeName;
+            if (description) recipe.description = description;
+            if (imagePath) recipe.imagePath = imagePath;
+    
+            await recipe.save();
+    
+            res.status(200).json({ message: "Recipe updated successfully", recipe });
+        } catch (error) {
+            console.error("Error updating recipe:", error);
+            res.status(500).json({ message: "Error updating recipe", error: error.message });
+        }
     });
     
 
