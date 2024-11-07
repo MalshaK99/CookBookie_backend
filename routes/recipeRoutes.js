@@ -5,6 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const auth = require('../middleware/auth');
+const { findOneAndDelete } = require('../models/User');
 
 // Check and create uploads directory if it doesn't exist
 const uploadDir = './uploads';
@@ -128,5 +129,31 @@ router.post('/recipe', auth, upload.single('image'), async (req, res) => {
         }
     });
     
+    router.delete('/recipe/:id',auth,async(req,res)=>{
+        console.log("Recipe ID:", req.params.id);
+        console.log("User ID:", req.user._id);
 
+        try{
+            const recipe= await Recipe.findOneAndDelete({_id: req.params.id, userId: req.user._id})
+            if(!recipe){
+                res.status(404).json({message: "Recipe not found"});
+            }else{
+                res.status(200).json({message: "Successfully deleted the recipe"});
+            }
+        }
+        catch(error){
+            console.log("Error updating recipe");
+            res.status(500).json({message: "Error updating recipe",error: error.message});
+        }
+    })
+
+    router.get('/search', async (req, res) => {
+        const query = req.query.q || ''; // Default to empty if query is not provided
+        try {
+          const recipes = await Recipe.find({ name: { $regex: query, $options: 'i' } }); // Case-insensitive
+          res.json(recipes);
+        } catch (error) {
+          res.status(500).json({ message: 'Server error' });
+        }
+      });
 module.exports = router;
