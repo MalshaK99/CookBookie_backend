@@ -1,0 +1,36 @@
+const express = require('express');
+const nodemailer = require('nodemailer');
+const router = express.Router();
+require('dotenv').config();
+
+router.post('/send-email', async (req, res) => {
+  try {
+    const { question } = req.body; // Get the question input from the request body
+
+    // Configure Nodemailer transporter
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    // Set up email options
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: 'gearwise24@gmail.com', // Fixed email to send to
+      subject: 'New Question Submission',
+      text: `User question: ${question}`, // Email body now contains the question
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: 'Email sent successfully' });
+  } catch (error) {
+    console.error("Error in sending email:", error);
+    res.status(500).json({ message: 'Failed to send email' });
+  }
+});
+
+module.exports = router;
