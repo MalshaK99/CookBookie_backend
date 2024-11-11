@@ -84,6 +84,27 @@ router.post('/recipe', auth, upload.single('image'), async (req, res) => {
             res.status(500).json({ message: 'Error fetching recipes', error: error.message });
         }
     });
+    router.get("/all-recipes", async (req, res) => {  
+        try {  
+          const recipes = await Recipe.find().populate('userId', 'name');  
+      
+          if (recipes.length === 0) {  
+            return res.status(404).json({ message: 'No recipes found' });  
+          }  
+      
+          const recipeData = recipes.map(recipe => ({  
+            recipeName: recipe.recipeName,  
+            imagePath: recipe.imagePath,  
+            description: recipe.description,  
+            userName: recipe.userId.name // Use 'name' if it's in your User model as key  
+          }));  
+      
+          res.status(200).json(recipeData);  
+        } catch (error) {  
+          console.error('Error fetching recipes:', error);  
+          res.status(500).json({ message: 'Error fetching recipes', error: error.message });  
+        }  
+      });  
     
     
     // PUT endpoint to update an existing recipe
