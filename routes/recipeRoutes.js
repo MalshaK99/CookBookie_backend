@@ -169,12 +169,31 @@ router.post('/recipe', auth, upload.single('image'), async (req, res) => {
     })
 
     router.get('/search', async (req, res) => {
-        const query = req.query.q || ''; // Default to empty if query is not provided
+        const query = req.query.q.trim() || ''; // Trim the query string
+        if (!query) {
+          return res.status(400).json({ message: 'Search query is required' });
+        }
+      
+        console.log("Search query:", query); // Log the query
+      
         try {
-          const recipes = await Recipe.find({ name: { $regex: query, $options: 'i' } }); // Case-insensitive
+          // Case-insensitive search on `recipeName`
+          const recipes = await Recipe.find({
+            recipeName: { $regex: query, $options: 'i' },
+          });
+      
+          console.log("Found recipes:", recipes); // Log the found recipes
+      
+          if (recipes.length === 0) {
+            return res.status(404).json({ message: 'No recipes found' });
+          }
+      
           res.json(recipes);
         } catch (error) {
+          console.error('Error searching recipes:', error);
           res.status(500).json({ message: 'Server error' });
         }
       });
+      
+
 module.exports = router;
