@@ -4,7 +4,43 @@ const router = express.Router();
 const jwt = require("jsonwebtoken");
 const auth = require("../middleware/auth");
 const bcrypt = require("bcrypt");
+const multer = require("multer");
+const path = require("path");
 
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "propics"); // folder name
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${req.user._id}-${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+const upload = multer({ storage });
+
+// Endpoint to handle profile picture uploads
+router.put("/update-profile-pic", auth, upload.single("profileImage"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).send({ message: "No file uploaded" });
+    }
+
+    // Update the user's profile photo path in the database
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { photo: req.file.path },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    res.send({ message: "Profile picture updated successfully", user });
+  } catch (error) {
+    console.error("Error updating profile picture:", error);
+    res.status(500).send({ message: "Error updating profile picture", error: error.message });
+  }
+});
 // Function to create token
 const createToken = (_id) => {
   return jwt.sign({ _id }, process.env.JWT_SECRET, { expiresIn: "3d" });
@@ -127,5 +163,6 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 
 module.exports = router;

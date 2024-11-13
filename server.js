@@ -17,7 +17,7 @@ app.use(express.json());
 app.use('/api/users', userRoutes); 
 app.use('/api/reviews', reviewRoutes); 
 app.use('/api/recipes', recipeRoutes);
-app.use('/api', emailRoutes); // Add the email route here
+app.use('/api', emailRoutes); 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 const PORT = process.env.PORT || 5000;  
 
