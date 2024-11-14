@@ -19,7 +19,13 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api', emailRoutes); 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use('/propics', (req, res, next) => {
+    console.log(`Serving file at: ${req.path}`);
+    next();
+  }, express.static(path.join(__dirname, 'propics')));
+  
 const PORT = process.env.PORT || 5000;  
+// Serve static files from the "propics" folder
 
 app.listen(PORT, () => {  
     console.log(`Server is running on port ${PORT}`);  
