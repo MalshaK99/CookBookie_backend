@@ -1,4 +1,25 @@
-Web-based recipe sharing platform provides users with a convenient and efficient solution for all their recipe needs. Users can easily search for recipes, publish their own, and manage profile details, including changing passwords, updating personal information, and uploading a profile picture. The platform also allows users to edit and delete their published recipes, as well as view previously shared recipes. With these features, our platform is designed to foster a community of cooking enthusiasts who can share and explore delicious recipes.
-Used MERN stack to develop this
+
+# CookBookie-Frontend
+
+Overview
+
+This repository contains the front-end development for the CookBookie recipe-sharing platform. 
+
+Technologies Used
+
+Web Application Development: MERN Stack (MongoDB, Express.js, React, Node.js)
+
+Testing Framework: Selenium with Java
+
+GitHub Repositories
 
 Frontend Repository - https://github.com/MalshaK99/CookBookie-Frontend
+
+Automated Testing Repository: https://github.com/MalshaK99/CookBookie_Test
+
+
+YouTube Videos
+
+Testing Video: [Link to Testing Video]
+
+Web Application Video: https://youtu.be/dD_bfRUtM_w?feature=shared
