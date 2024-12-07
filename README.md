@@ -20,6 +20,6 @@ Automated Testing Repository: https://github.com/MalshaK99/CookBookie_Test
 
 YouTube Videos
 
-Testing Video: [Link to Testing Video]
+Testing Video: https://youtu.be/CzIKRnSuuTA
 
 Web Application Video: https://youtu.be/dD_bfRUtM_w?feature=shared
